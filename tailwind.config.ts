@@ -81,18 +81,6 @@ export default {
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
         },
-        success: {
-          DEFAULT: "hsl(142 76% 36%)",
-          dark: "hsl(142 70% 45%)",
-        },
-        warning: {
-          DEFAULT: "hsl(38 92% 50%)",
-          dark: "hsl(38 85% 55%)",
-        },
-        error: {
-          DEFAULT: "hsl(0 84% 60%)",
-          dark: "hsl(0 72% 65%)",
-        },
       },
       fontFamily: {
         sans: ["var(--font-sans)"],
@@ -108,15 +96,10 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        pulse: {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.5" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        pulse: "pulse 2s ease-in-out infinite",
       },
     },
   },
