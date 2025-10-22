@@ -1,10 +1,14 @@
 import { Loader2 } from "lucide-react";
 
-export function LoadingOverlay() {
+interface LoadingOverlayProps {
+  message?: string;
+}
+
+export function LoadingOverlay({ message = "Loading..." }: LoadingOverlayProps) {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm z-50">
-      <Loader2 className="w-12 h-12 text-primary animate-spin" data-testid="spinner-loading" />
-      <p className="mt-4 text-muted-foreground text-base">Loading website...</p>
+    <div className="flex flex-col items-center justify-center h-full bg-background">
+      <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+      <p className="text-base text-muted-foreground">{message}</p>
     </div>
   );
 }

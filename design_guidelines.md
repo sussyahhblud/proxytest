@@ -1,259 +1,213 @@
-# Design Guidelines: Unblocked Proxy Browser
+# Design Guidelines: Enhanced Proxy Browser
 
 ## Design Approach
 
-**Selected Approach**: Reference-Based with Chrome/Arc Browser inspiration combined with Material Design system principles
+**Selected Approach**: Design System (Chrome/Arc Browser Patterns)
+**Rationale**: As a utility-focused browser application, users expect familiar, efficient patterns. Drawing from Chrome's clarity and Arc's modern aesthetics creates an interface that's immediately usable while feeling contemporary.
 
-**Justification**: This is a utility-focused productivity tool where efficiency, clarity, and familiarity are paramount. Users need to immediately understand how to navigate and use the proxy browser without learning curve. Drawing from established browser patterns (Chrome's clean interface, Arc's modern aesthetics) ensures instant usability while Material Design provides robust component guidelines for functionality.
+**Core Principles**:
+- Familiar browser conventions for zero learning curve
+- Performance-first design with minimal visual overhead
+- Dark-first color scheme with clean light mode alternative
+- Spatial efficiency maximizing browsing viewport
 
-**Key Design Principles**:
-1. Familiarity First: Leverage universal browser UI patterns
-2. Functional Clarity: Every element serves a clear purpose
-3. Performance Indicators: Visual feedback for proxy status and loading
-4. Minimal Distraction: Content (proxied websites) is the hero, not the UI
-5. Dark Mode Native: Designed primarily for dark mode with optional light theme
+## Color Palette
 
----
+### Dark Mode (Primary)
+- **Background**: 220 15% 8% (deep slate)
+- **Surface/Chrome**: 220 12% 12% (slightly lighter slate)
+- **Tab Bar**: 220 13% 10% (between background and surface)
+- **Active Tab**: 220 12% 15% (elevated surface)
+- **Inactive Tab**: 220 12% 10% (recessed, subtle)
+- **Tab Hover**: 220 12% 13% (gentle lift)
+- **Primary Accent**: 220 85% 60% (vivid blue for active states)
+- **Success/Connected**: 142 70% 50% (green for proxy status)
+- **Warning**: 38 92% 50% (amber for mixed content)
+- **Error**: 0 85% 60% (red for failures)
+- **Border/Divider**: 220 15% 18% (subtle separation)
+- **Text Primary**: 220 10% 95% (near white)
+- **Text Secondary**: 220 8% 65% (muted for metadata)
 
-## Core Design Elements
+### Light Mode
+- **Background**: 0 0% 100% (pure white)
+- **Surface/Chrome**: 220 10% 98% (soft off-white)
+- **Tab Bar**: 220 10% 96%
+- **Active Tab**: 0 0% 100% (crisp white)
+- **Inactive Tab**: 220 10% 94%
+- **Primary Accent**: 220 85% 55%
+- **Border/Divider**: 220 10% 88%
+- **Text Primary**: 220 15% 15%
+- **Text Secondary**: 220 8% 45%
 
-### A. Color Palette
+## Typography
 
-**Dark Mode (Primary)**:
-- Background Base: 220 15% 8%
-- Surface Elevated: 220 12% 12%
-- Surface Secondary: 220 10% 16%
-- Border Subtle: 220 8% 24%
-- Text Primary: 220 8% 95%
-- Text Secondary: 220 5% 70%
-- Text Tertiary: 220 5% 50%
-- Primary Accent: 220 85% 60% (blue for interactive elements)
-- Success Indicator: 142 70% 50% (proxy active status)
-- Warning: 38 95% 55% (connection issues)
-- Error: 0 85% 60% (blocked/failed requests)
+**Interface Font**: Inter (400, 500, 600, 700)
+- Tab labels: 500 weight, 13px (text-sm)
+- Address bar: 400 weight, 14px
+- Navigation controls: 500 weight
+- Status indicators: 500 weight, 12px (text-xs)
 
-**Light Mode (Secondary)**:
-- Background Base: 220 15% 98%
-- Surface Elevated: 0 0% 100%
-- Surface Secondary: 220 10% 95%
-- Border Subtle: 220 8% 80%
-- Text Primary: 220 15% 15%
-- Text Secondary: 220 10% 35%
-- Primary Accent: 220 90% 55%
+**Monospace Font**: JetBrains Mono
+- URL display: 400 weight, 14px
+- Technical metadata: 400 weight, 12px
 
-### B. Typography
+## Layout System
 
-**Font Families**:
-- Primary Interface: 'Inter' from Google Fonts (weights: 400, 500, 600, 700)
-- URL Display/Input: 'JetBrains Mono' from Google Fonts (weight: 400, 500) for monospace clarity
-- Fallback: system-ui, -apple-system, sans-serif
+**Spacing Primitives**: Tailwind units 1, 2, 3, 4, 6, 8, 12, 16
+- Tab padding: px-3 py-2
+- Chrome padding: px-4
+- Button gaps: gap-2
+- Section spacing: space-x-2, space-y-4
 
-**Type Scale**:
-- Page Title/Large Headers: text-2xl (24px) font-semibold
-- Section Headers: text-lg (18px) font-medium
-- Body/Controls: text-base (16px) font-normal
-- URL Bar Text: text-sm (14px) font-normal (JetBrains Mono)
-- Metadata/Labels: text-xs (12px) font-medium
-- Button Text: text-sm (14px) font-medium
-
-### C. Layout System
-
-**Spacing Primitives**: Use Tailwind units of 1, 2, 3, 4, 6, 8, 12, 16 for consistent rhythm
-- Component padding: p-3, p-4
-- Section spacing: gap-4, gap-6
-- Tight spacing: gap-2, space-x-2
-- Large separations: gap-8, gap-12
-
-**Browser Layout Structure**:
-- Fixed browser chrome height: h-16 (64px) for top navigation bar
-- Full viewport layout with no scroll on chrome
-- Content area: Remaining viewport height minus chrome
-- Sidebar (if bookmarks/history): Fixed w-64 collapsible panel
-
-**Grid System**:
-- Container: max-w-none (full width for browser)
-- Content iframe: w-full h-full absolute positioning
-- Settings panels: max-w-2xl centered
-
-### D. Component Library
-
-**Browser Chrome Components**:
-
-1. **Top Navigation Bar**
-   - Fixed top bar with subtle border-b
-   - Background: Surface Elevated with backdrop blur
-   - Contains: Back/Forward buttons, URL bar, refresh, home, settings
-   - Height: h-16 with px-4 padding
-   - Subtle shadow: shadow-sm
-
-2. **Navigation Buttons**
-   - Icon-only buttons (Heroicons)
-   - Size: w-9 h-9 rounded squares
-   - Hover state: background Surface Secondary
-   - Disabled state: 40% opacity, no interaction
-   - Icons: ChevronLeft, ChevronRight, ArrowPath, Home
-
-3. **URL Address Bar**
-   - Flex-1 to fill available space
-   - Background: Surface Secondary
-   - Border: 1px Border Subtle, focus: 2px Primary Accent
-   - Height: h-10
-   - Rounded: rounded-lg
-   - Padding: px-4
-   - Left icon: Lock (secure) or GlobeAlt (proxy status)
-   - Right actions: Clear URL (X), Copy URL
-
-4. **Action Buttons** (Settings, Theme Toggle)
-   - Icon buttons: w-9 h-9
-   - Positioned at far right of nav bar
-   - Tooltip on hover
-   - Icons: Cog6Tooth, Sun/Moon
-
-**Content Display**:
-
-5. **Proxy Iframe Container**
-   - Full remaining viewport height
-   - Background: Background Base
-   - Border: none
-   - Position: relative for loading overlays
-   - Sandbox attributes for security
-
-6. **Loading State Overlay**
-   - Centered spinner with backdrop
-   - Semi-transparent background: rgba(0,0,0,0.5)
-   - Spinner: Primary Accent color
-   - Loading text: Text Secondary
-
-7. **Error State Screen**
-   - Centered content with icon
-   - Large error icon (ShieldExclamation)
-   - Error message: Text Primary, text-xl
-   - Suggested actions: Retry button (Primary Accent)
-   - Technical details: Collapsible section with Text Tertiary
-
-**Settings & Modal Components**:
-
-8. **Settings Drawer/Modal**
-   - Slide-in from right: w-96
-   - Background: Surface Elevated
-   - Sections: Proxy Settings, Privacy, Appearance
-   - Toggle switches for features
-   - Input fields for custom proxy servers
-   - Save/Cancel buttons at bottom
-
-9. **Bookmarks/History Sidebar**
-   - Collapsible left panel: w-64
-   - List items with favicon + title
-   - Hover state: Surface Secondary background
-   - Search/filter input at top
-   - Grouped by: Today, Yesterday, Last 7 Days
-
-10. **Status Indicators**
-    - Fixed bottom-right corner toast
-    - Shows: Proxy Status (Connected/Disconnected)
-    - Color-coded background: Success/Error
-    - Auto-dismiss after 3 seconds
-    - Small, rounded-lg, px-4 py-2
-
-**Form Components**:
-
-11. **Input Fields**
-    - Background: Surface Secondary
-    - Border: 1px Border Subtle, focus: Primary Accent
-    - Rounded: rounded-lg
-    - Height: h-10 for standard, h-12 for prominent
-    - Padding: px-4
-    - Placeholder: Text Tertiary
-
-12. **Buttons**
-    - Primary: bg-Primary Accent, text-white, hover: brightness increase
-    - Secondary: border-2 Border Subtle, hover: Surface Secondary
-    - Ghost: no background, hover: Surface Secondary
-    - Height: h-10
-    - Padding: px-6
-    - Rounded: rounded-lg
-    - Font: font-medium
-
-**Data Display**:
-
-13. **URL Suggestions Dropdown**
-    - Appears below URL bar when typing
-    - Background: Surface Elevated with shadow-lg
-    - Max height: max-h-96 with overflow-y-auto
-    - List items: px-4 py-2.5, hover: Surface Secondary
-    - Displays: Favicon, Page Title, URL (Text Tertiary)
-    - Keyboard navigation support
-
-14. **Context Menus**
-    - Right-click menus for iframe content
-    - Background: Surface Elevated, border: Border Subtle
-    - Rounded: rounded-md
-    - Shadow: shadow-xl
-    - Items: px-3 py-2, hover: Surface Secondary
-    - Dividers: 1px Border Subtle
-
-### E. Animations
-
-Use animations extremely sparingly:
-- Page transitions: None (instant for performance)
-- URL bar focus: transition-all duration-200 for border color
-- Button hovers: transition-colors duration-150
-- Drawer/sidebar: slide-in with transition-transform duration-300
-- Loading spinner: Simple rotate animation only
-- NO complex page animations, parallax, or decorative effects
-
----
-
-## Layout Specifications
-
-**Browser Window Structure**:
+**Browser Chrome Structure**:
 ```
-┌─────────────────────────────────────────────────┐
-│ [←][→][⟳][🏠]  [🔒 URL Bar............] [⚙][☾]│ ← h-16 chrome
-├─────────────────────────────────────────────────┤
-│                                                 │
-│                                                 │
-│          PROXIED WEBSITE CONTENT                │
-│          (iframe full height)                   │
-│                                                 │
-│                                                 │
-└─────────────────────────────────────────────────┘
-                                    [Status Toast]
+┌─────────────────────────────────────────────┐
+│ Tab Bar (h-10)                              │ ← 40px
+│ [Tab 1] [Tab 2] [+]                         │
+├─────────────────────────────────────────────┤
+│ Navigation Bar (h-14)                       │ ← 56px
+│ [←][→][↻][🏠] [🔒 URL Bar      ] [☀]       │
+└─────────────────────────────────────────────┘
 ```
 
-**Settings Panel Layout**:
-- Full height overlay or slide-in drawer
-- Header with close button
-- Scrollable content with sections
-- Fixed footer with action buttons
+**Total Chrome Height**: 96px (24px tabs + 56px nav + 16px total padding)
+**Viewport Area**: calc(100vh - 96px)
 
-**Visual Hierarchy**:
-- Chrome navigation: Always visible, prominent but not distracting
-- URL bar: Most prominent element (larger, centered)
-- Action buttons: Secondary, icon-only to save space
-- Content iframe: Takes absolute priority in visual weight
+## Component Library
 
-**Responsive Behavior**:
-- Desktop: Full layout as described
-- Tablet: Collapse sidebar by default, reduce spacing
-- Mobile: Hide back/forward buttons, single column settings
+### Tab System
+**Tab Bar**:
+- Container: Full width, bg-[tab-bar], border-b with divider color
+- Height: h-10 (40px)
+- Horizontal scroll on overflow: overflow-x-auto, scrollbar-hide
 
----
+**Individual Tabs**:
+- Min width: min-w-[120px], Max width: max-w-[240px]
+- Flexible width: flex-1
+- Padding: px-3 py-2
+- Rounded corners: rounded-t-lg (top only)
+- Active state: bg-[active-tab], border-b-2 border-primary
+- Inactive state: bg-[inactive-tab], opacity-80
+- Hover: bg-[tab-hover], opacity-100
+- Close button: ml-auto, hover:bg-destructive/10, w-4 h-4
 
-## Images
+**New Tab Button**:
+- Position: After all tabs, sticky right
+- Size: w-10 h-10 (square)
+- Icon: Plus, 16px
+- Hover: bg-accent/10
 
-This application does NOT require hero images or decorative imagery. The focus is entirely functional:
+### Navigation Controls
+**Back/Forward/Refresh/Home Buttons**:
+- Size: h-9 w-9 (36px square)
+- Spacing: gap-1 between buttons
+- Icon size: 18px
+- Disabled state: opacity-40, cursor-not-allowed
+- Hover: bg-accent/10
+- Active: bg-accent/20
 
-**Required Icons Only**:
-- Use Heroicons (via CDN) for all interface icons
-- Navigation: ChevronLeft, ChevronRight, ArrowPath, HomeIcon
-- Security: LockClosedIcon, GlobeAltIcon, ShieldExclamationIcon
-- Actions: Cog6ToothIcon, MoonIcon, SunIcon, XMarkIcon
-- Status: CheckCircleIcon, XCircleIcon
+**Address Bar**:
+- Flex-1 to fill available space
+- Height: h-10 (40px)
+- Rounded: rounded-lg
+- Padding: px-3 py-2
+- Background: Slightly elevated surface
+- Focus: ring-2 ring-primary/50
+- Monospace font for entered URLs
+- Left icon: Lock (🔒) 16px, text-muted-foreground
+- Clear button (X) on right when populated
 
-**Favicon Display**:
-- Show favicons for bookmarks and URL suggestions
-- Fallback to Globe icon when unavailable
-- Size: w-4 h-4 or w-5 h-5
+**Theme Toggle**:
+- Position: Far right of nav bar
+- Size: h-9 w-9
+- Icons: Sun/Moon, 18px
+- Smooth icon transition
 
-**No decorative images, backgrounds, or hero sections needed** - this is a pure utility application where the proxied website content IS the visual content.
+### Status Indicators
+**Loading State**:
+- Linear progress bar beneath nav chrome
+- Height: h-1
+- Primary color with subtle animation
+- Indeterminate style (sliding gradient)
+
+**Connection Status** (small indicator in address bar):
+- Dot before lock icon
+- Green: Connected successfully
+- Amber: Mixed content warning
+- Red: Connection failed
+- Size: w-2 h-2, rounded-full
+
+### Content Display
+**Iframe Container**:
+- Full viewport minus chrome
+- Border: none
+- Background: bg-background (loading state)
+- Sandbox attributes for security
+- Seamless attribute
+
+**Welcome Screen** (no tabs open):
+- Centered content, max-w-2xl
+- Hero text: text-4xl font-bold
+- Feature cards: grid-cols-1 md:grid-cols-3, gap-6
+- Card style: bg-card, rounded-xl, p-6, border
+
+**Error Screen**:
+- Centered content, max-w-md
+- Icon: AlertCircle, 64px, text-destructive
+- Heading: text-2xl font-semibold
+- Retry button: Primary variant, with-icon
+
+### Toast Notifications
+**Position**: Bottom-right corner
+**Style**: bg-card, border, rounded-lg, shadow-lg
+**Duration**: 3s for success, 5s for errors
+**Content**: Icon + message, max 2 lines
+
+## Interactions & Animations
+
+**Tab Animations**:
+- Tab creation: Fade in + slide from right (200ms)
+- Tab switching: Instant background change
+- Tab close: Fade out + collapse width (150ms)
+- Tab reordering: Smooth position transition (200ms) - future enhancement
+
+**Navigation Feedback**:
+- Button press: Scale 0.95 on active
+- Address bar submit: Subtle pulse on Enter
+- Loading progress: Smooth 0-100% with easing
+
+**Hover States**:
+- All interactive elements: 100ms transition
+- Subtle background color change
+- No transform effects (keeps interface stable)
+
+## Keyboard Shortcuts
+
+Display shortcuts in tooltips:
+- **Cmd/Ctrl + T**: New tab
+- **Cmd/Ctrl + W**: Close tab
+- **Cmd/Ctrl + Tab**: Next tab
+- **Cmd/Ctrl + Shift + Tab**: Previous tab
+- **Cmd/Ctrl + L**: Focus address bar
+- **Cmd/Ctrl + R**: Refresh
+- **Cmd/Ctrl + [**: Back
+- **Cmd/Ctrl + ]**: Forward
+
+## Accessibility
+
+- Tab elements: role="tab", aria-selected
+- Address bar: aria-label="Enter URL or search"
+- Loading state: aria-live="polite"
+- All buttons: aria-label for screen readers
+- Focus visible: ring-2 ring-primary on keyboard focus
+- Color contrast: WCAG AA minimum on all text
+
+## Responsive Behavior
+
+**Desktop (>1024px)**: Full tab bar with all tabs visible
+**Tablet (768-1024px)**: Scrollable tab bar, condensed spacing
+**Mobile (<768px)**: 
+- Tab bar: Horizontal scroll, shows 2-3 tabs
+- Address bar: Full width, reduced padding
+- Navigation buttons: Slightly smaller (h-8 w-8)
+- New tab via menu instead of always-visible button

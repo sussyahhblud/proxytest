@@ -1,186 +1,315 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { TabBar } from "@/components/tab-bar";
 import { BrowserChrome } from "@/components/browser-chrome";
+import { LoadingBar } from "@/components/loading-bar";
+import { WelcomeScreen } from "@/components/welcome-screen";
 import { LoadingOverlay } from "@/components/loading-overlay";
 import { ErrorScreen } from "@/components/error-screen";
-import { WelcomeScreen } from "@/components/welcome-screen";
-import { NavigationState, ProxyError, ProxyStatus } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-
-const DEFAULT_HOME = "";
+import { apiRequest } from "@/lib/queryClient";
+import type { TabState, ProxyResponse, ProxyError } from "@shared/schema";
 
 export default function Browser() {
   const { toast } = useToast();
-  const [navigationState, setNavigationState] = useState<NavigationState>({
-    history: [DEFAULT_HOME],
-    currentIndex: 0,
-  });
-  const [currentUrl, setCurrentUrl] = useState(DEFAULT_HOME);
-  const [proxyUrl, setProxyUrl] = useState<string>("");
-  const [status, setStatus] = useState<ProxyStatus>("idle");
-  const [error, setError] = useState<ProxyError | null>(null);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [tabs, setTabs] = useState<TabState[]>([]);
+  const [activeTabId, setActiveTabId] = useState<string>("");
 
-  const currentUrlFromHistory = navigationState.history[navigationState.currentIndex];
+  const activeTab = tabs.find((tab) => tab.id === activeTabId);
 
-  const loadUrl = async (url: string) => {
-    if (!url) {
-      setStatus("idle");
-      setProxyUrl("");
-      setError(null);
-      return;
+  // Create a new tab
+  const createNewTab = useCallback(() => {
+    const newTab: TabState = {
+      id: crypto.randomUUID(),
+      title: "New Tab",
+      url: "",
+      loading: false,
+      error: null,
+      history: [],
+      historyIndex: -1,
+      content: null,
+    };
+    setTabs((prev) => [...prev, newTab]);
+    setActiveTabId(newTab.id);
+  }, []);
+
+  // Initialize with one tab
+  useEffect(() => {
+    if (tabs.length === 0) {
+      createNewTab();
     }
+  }, [tabs.length, createNewTab]);
 
-    setStatus("loading");
-    setError(null);
-    setIsInitialLoad(true);
+  // Close a tab
+  const closeTab = useCallback((tabId: string) => {
+    setTabs((prev) => {
+      const newTabs = prev.filter((tab) => tab.id !== tabId);
+      
+      // If closing the active tab, switch to another tab
+      if (tabId === activeTabId && newTabs.length > 0) {
+        const closedIndex = prev.findIndex((tab) => tab.id === tabId);
+        const newActiveIndex = Math.max(0, closedIndex - 1);
+        setActiveTabId(newTabs[newActiveIndex].id);
+      }
+      
+      return newTabs;
+    });
+  }, [activeTabId]);
+
+  // Fetch content for a URL without modifying history (for back/forward)
+  const fetchContent = useCallback(async (url: string, updateHistory: boolean = false) => {
+    if (!activeTabId || !url.trim()) return;
+
+    // Set loading state
+    setTabs((prev) =>
+      prev.map((tab) =>
+        tab.id === activeTabId
+          ? {
+              ...tab,
+              loading: true,
+              error: null,
+            }
+          : tab
+      )
+    );
 
     try {
-      // First verify the URL is accessible
-      const response = await fetch("/api/proxy", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Failed to load website (${response.status})`);
-      }
-
-      // If successful, set the iframe to load via GET
-      const encodedUrl = encodeURIComponent(url);
-      setProxyUrl(`/api/proxy?url=${encodedUrl}`);
-      setStatus("success");
+      // Call the proxy API
+      const res = await apiRequest("POST", "/api/proxy", { url });
+      const response: ProxyResponse = await res.json();
+      
+      // Extract title from URL or use URL as title
+      const title = new URL(response.finalUrl).hostname.replace("www.", "") || "Page";
+      
+      // Update tab with successful response
+      setTabs((prev) =>
+        prev.map((tab) =>
+          tab.id === activeTabId
+            ? {
+                ...tab,
+                url: response.finalUrl,
+                title,
+                loading: false,
+                content: response.content,
+                error: null,
+                // Only update history if this is a new navigation
+                ...(updateHistory ? {
+                  history: [...tab.history.slice(0, tab.historyIndex + 1), response.finalUrl],
+                  historyIndex: tab.historyIndex + 1,
+                } : {}),
+              }
+            : tab
+        )
+      );
+    } catch (error) {
+      const proxyError = error as ProxyError;
+      
+      // Update tab with error
+      setTabs((prev) =>
+        prev.map((tab) =>
+          tab.id === activeTabId
+            ? {
+                ...tab,
+                loading: false,
+                error: {
+                  message: proxyError.message || "Failed to load page",
+                  details: proxyError.details || "Please check the URL and try again",
+                },
+              }
+            : tab
+        )
+      );
       
       toast({
-        title: "Website loaded",
-        description: "Successfully connected through proxy",
-        duration: 2000,
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-      setError({
-        message: "Could not load the website",
-        details: errorMessage,
-      });
-      setStatus("error");
-      setProxyUrl("");
-      
-      toast({
-        title: "Connection failed",
-        description: errorMessage,
+        title: "Failed to load page",
+        description: proxyError.message || "An error occurred",
         variant: "destructive",
-        duration: 4000,
       });
     }
-  };
+  }, [activeTabId, toast]);
 
-  const navigate = (url: string) => {
-    if (url === currentUrlFromHistory) {
-      loadUrl(url);
-      return;
-    }
+  // Navigate to a URL (or search) - adds to history
+  const navigate = useCallback(async (url: string) => {
+    await fetchContent(url, true);
+  }, [fetchContent]);
 
-    const newHistory = navigationState.history.slice(0, navigationState.currentIndex + 1);
-    newHistory.push(url);
+  // Navigation actions
+  const goBack = useCallback(() => {
+    if (!activeTab || activeTab.historyIndex <= 0) return;
     
-    setNavigationState({
-      history: newHistory,
-      currentIndex: newHistory.length - 1,
-    });
-    setCurrentUrl(url);
-  };
+    const newIndex = activeTab.historyIndex - 1;
+    const newUrl = activeTab.history[newIndex];
+    
+    // Update index
+    setTabs((prev) =>
+      prev.map((tab) =>
+        tab.id === activeTabId
+          ? { ...tab, historyIndex: newIndex }
+          : tab
+      )
+    );
+    
+    // Fetch content without modifying history
+    fetchContent(newUrl, false);
+  }, [activeTab, activeTabId, fetchContent]);
 
-  const goBack = () => {
-    if (navigationState.currentIndex > 0) {
-      const newIndex = navigationState.currentIndex - 1;
-      setNavigationState({
-        ...navigationState,
-        currentIndex: newIndex,
-      });
-      setCurrentUrl(navigationState.history[newIndex]);
-    }
-  };
+  const goForward = useCallback(() => {
+    if (!activeTab || activeTab.historyIndex >= activeTab.history.length - 1) return;
+    
+    const newIndex = activeTab.historyIndex + 1;
+    const newUrl = activeTab.history[newIndex];
+    
+    // Update index
+    setTabs((prev) =>
+      prev.map((tab) =>
+        tab.id === activeTabId
+          ? { ...tab, historyIndex: newIndex }
+          : tab
+      )
+    );
+    
+    // Fetch content without modifying history
+    fetchContent(newUrl, false);
+  }, [activeTab, activeTabId, fetchContent]);
 
-  const goForward = () => {
-    if (navigationState.currentIndex < navigationState.history.length - 1) {
-      const newIndex = navigationState.currentIndex + 1;
-      setNavigationState({
-        ...navigationState,
-        currentIndex: newIndex,
-      });
-      setCurrentUrl(navigationState.history[newIndex]);
-    }
-  };
+  const refresh = useCallback(() => {
+    if (!activeTab || !activeTab.url) return;
+    navigate(activeTab.url);
+  }, [activeTab, navigate]);
 
-  const refresh = () => {
-    if (proxyUrl) {
-      // Force reload the iframe
-      const iframe = document.querySelector('iframe[data-testid="iframe-content"]') as HTMLIFrameElement;
-      if (iframe) {
-        iframe.src = proxyUrl;
-      }
-    } else {
-      loadUrl(currentUrlFromHistory);
-    }
-  };
+  const goHome = useCallback(() => {
+    if (!activeTab) return;
+    
+    setTabs((prev) =>
+      prev.map((tab) =>
+        tab.id === activeTabId
+          ? {
+              ...tab,
+              url: "",
+              title: "New Tab",
+              content: null,
+              history: [],
+              historyIndex: -1,
+              error: null,
+            }
+          : tab
+      )
+    );
+  }, [activeTab, activeTabId]);
 
-  const goHome = () => {
-    navigate(DEFAULT_HOME);
-  };
-
-  const handleIframeLoad = () => {
-    if (isInitialLoad && proxyUrl) {
-      setIsInitialLoad(false);
-      setStatus("success");
-    }
-  };
-
+  // Listen for navigation messages from iframe
   useEffect(() => {
-    loadUrl(currentUrlFromHistory);
-  }, [currentUrlFromHistory]);
+    const handleMessage = (event: MessageEvent) => {
+      // Only handle navigation messages
+      if (event.data && event.data.type === "navigate" && event.data.url) {
+        navigate(event.data.url);
+      }
+    };
 
-  const canGoBack = navigationState.currentIndex > 0;
-  const canGoForward = navigationState.currentIndex < navigationState.history.length - 1;
-  const isSecure = currentUrlFromHistory.startsWith("https://");
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [navigate]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const modKey = isMac ? e.metaKey : e.ctrlKey;
+
+      if (modKey && e.key === "t") {
+        e.preventDefault();
+        createNewTab();
+      } else if (modKey && e.key === "w") {
+        e.preventDefault();
+        if (activeTabId && tabs.length > 1) {
+          closeTab(activeTabId);
+        }
+      } else if (modKey && e.key === "r") {
+        e.preventDefault();
+        refresh();
+      } else if (modKey && e.key === "[") {
+        e.preventDefault();
+        goBack();
+      } else if (modKey && e.key === "]") {
+        e.preventDefault();
+        goForward();
+      } else if (modKey && e.key === "l") {
+        e.preventDefault();
+        // Focus address bar
+        const addressBar = document.querySelector('[data-testid="input-address-bar"]') as HTMLInputElement;
+        addressBar?.focus();
+        addressBar?.select();
+      } else if (modKey && e.key === "Tab") {
+        e.preventDefault();
+        const currentIndex = tabs.findIndex((tab) => tab.id === activeTabId);
+        const nextIndex = e.shiftKey
+          ? (currentIndex - 1 + tabs.length) % tabs.length
+          : (currentIndex + 1) % tabs.length;
+        setActiveTabId(tabs[nextIndex].id);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [tabs, activeTabId, createNewTab, closeTab, refresh, goBack, goForward]);
+
+  if (tabs.length === 0) {
+    return <WelcomeScreen />;
+  }
+
+  const canGoBack = activeTab ? activeTab.historyIndex > 0 : false;
+  const canGoForward = activeTab
+    ? activeTab.historyIndex < activeTab.history.length - 1
+    : false;
 
   return (
-    <div className="h-screen flex flex-col bg-background">
+    <div className="flex flex-col h-screen">
+      <TabBar
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onTabSelect={setActiveTabId}
+        onTabClose={closeTab}
+        onNewTab={createNewTab}
+      />
+      
       <BrowserChrome
-        url={currentUrl}
-        onUrlChange={setCurrentUrl}
+        url={activeTab?.url || ""}
+        status={activeTab?.error ? "error" : activeTab?.content ? "success" : "idle"}
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
         onNavigate={navigate}
         onBack={goBack}
         onForward={goForward}
         onRefresh={refresh}
         onHome={goHome}
-        canGoBack={canGoBack}
-        canGoForward={canGoForward}
-        isSecure={isSecure}
-        isLoading={status === "loading"}
       />
-
-      <div className="flex-1 relative overflow-hidden">
-        {status === "loading" && isInitialLoad && <LoadingOverlay />}
-        
-        {status === "error" && error && (
-          <ErrorScreen error={error} onRetry={refresh} />
-        )}
-        
-        {status === "idle" && !currentUrlFromHistory && (
+      
+      <LoadingBar loading={activeTab?.loading || false} />
+      
+      <div className="flex-1 overflow-hidden" data-testid="content-area">
+        {!activeTab?.url && !activeTab?.loading && !activeTab?.error && (
           <WelcomeScreen />
         )}
-
-        {proxyUrl && (
+        
+        {activeTab?.loading && (
+          <LoadingOverlay message={`Loading ${activeTab.url}...`} />
+        )}
+        
+        {activeTab?.error && (
+          <ErrorScreen
+            message={activeTab.error.message}
+            details={activeTab.error.details}
+            onRetry={refresh}
+          />
+        )}
+        
+        {activeTab?.content && !activeTab?.loading && !activeTab?.error && (
           <iframe
-            src={proxyUrl}
-            onLoad={handleIframeLoad}
-            className="w-full h-full border-none"
-            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
-            title="Proxied Content"
+            key={activeTab.id + "-" + activeTab.url}
             data-testid="iframe-content"
+            srcDoc={activeTab.content}
+            className="w-full h-full border-0"
+            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+            title={activeTab.title}
           />
         )}
       </div>

@@ -81,6 +81,13 @@ export default {
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
         },
+        "tab-bar": "hsl(var(--tab-bar) / <alpha-value>)",
+        "active-tab": "hsl(var(--active-tab) / <alpha-value>)",
+        "inactive-tab": "hsl(var(--inactive-tab) / <alpha-value>)",
+        "tab-hover": "hsl(var(--tab-hover) / <alpha-value>)",
+        "chrome-surface": "hsl(var(--chrome-surface) / <alpha-value>)",
+        success: "hsl(142 70% 50% / <alpha-value>)",
+        warning: "hsl(38 92% 50% / <alpha-value>)",
       },
       fontFamily: {
         sans: ["var(--font-sans)"],

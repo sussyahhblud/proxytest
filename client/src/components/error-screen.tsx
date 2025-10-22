@@ -1,56 +1,30 @@
-import { ShieldAlert, RotateCw } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ProxyError } from "@shared/schema";
-import { useState } from "react";
 
 interface ErrorScreenProps {
-  error: ProxyError;
-  onRetry: () => void;
+  message: string;
+  details?: string;
+  onRetry?: () => void;
 }
 
-export function ErrorScreen({ error, onRetry }: ErrorScreenProps) {
-  const [showDetails, setShowDetails] = useState(false);
-
+export function ErrorScreen({ message, details, onRetry }: ErrorScreenProps) {
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-background p-8">
-      <ShieldAlert className="w-20 h-20 text-destructive mb-6" data-testid="icon-error" />
-      
-      <h2 className="text-xl font-semibold text-foreground mb-2" data-testid="text-error-title">
-        Unable to Load Website
-      </h2>
-      
-      <p className="text-muted-foreground text-center max-w-md mb-6" data-testid="text-error-message">
-        {error.message}
-      </p>
-
-      <Button
-        onClick={onRetry}
-        className="gap-2"
-        data-testid="button-retry"
-      >
-        <RotateCw className="w-4 h-4" />
-        Try Again
-      </Button>
-
-      {error.details && (
-        <div className="mt-8 max-w-2xl w-full">
-          <button
-            onClick={() => setShowDetails(!showDetails)}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
-            data-testid="button-toggle-details"
+    <div className="flex flex-col items-center justify-center h-full bg-background px-6">
+      <div className="max-w-md text-center">
+        <AlertCircle className="w-16 h-16 mx-auto mb-4 text-destructive" />
+        <h2 className="text-2xl font-semibold mb-2 text-foreground">{message}</h2>
+        {details && (
+          <p className="text-sm text-muted-foreground mb-6">{details}</p>
+        )}
+        {onRetry && (
+          <Button 
+            onClick={onRetry}
+            data-testid="button-retry"
           >
-            {showDetails ? "Hide" : "Show"} technical details
-          </button>
-          
-          {showDetails && (
-            <div className="mt-3 p-4 bg-secondary rounded-lg border border-border">
-              <pre className="text-xs text-muted-foreground font-mono whitespace-pre-wrap break-all" data-testid="text-error-details">
-                {error.details}
-              </pre>
-            </div>
-          )}
-        </div>
-      )}
+            Try Again
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

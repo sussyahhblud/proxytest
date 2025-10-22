@@ -10,7 +10,6 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Browser} />
-      <Route path="*" component={Browser} />
     </Switch>
   );
 }
